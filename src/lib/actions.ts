@@ -2,7 +2,8 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { ai, generateContentWithGemini } from "./gemini";
+import { ai } from "./gemini";
+import { createPartFromUri, createUserContent } from "@google/genai";
 
 export async function clearGeneratedContent() {
   //   cookies().delete("generatedContent")
@@ -17,7 +18,7 @@ export async function generateContent(formData: FormData) {
   const ageGroup = formData.get("ageGroup") as string;
   const brandVoice = formData.get("brandVoice") as string;
   const objective = formData.get("objective") as string;
-  const imageBase64 = formData.get("image") as string; // Get the base64 image string
+  const imageFile = formData.get("imageFile") as File; // Get the File image
 
   // Validate required fields
   if (!topic) {
@@ -35,12 +36,35 @@ export async function generateContent(formData: FormData) {
       objective,
     });
 
-    console.log(prompt);
+    // console.log(prompt);
+    console.log(imageFile);
 
     try {
+      if (imageFile) {
+        const file = await ai.files.upload({
+          file: imageFile,
+          config: {
+            mimeType: imageFile.type,
+          },
+        });
+        if (!file || !file.uri || !file.mimeType)
+          return { error: "File upload failed" };
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash-preview-04-17",
+          contents: [
+            createUserContent([
+              prompt,
+              createPartFromUri(file.uri, file.mimeType),
+            ]),
+          ],
+        });
+        revalidatePath("/");
+        return { content: response.text };
+      }
+
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-04-17",
-        contents: [prompt, imageBase64], // Include the base64 image string in the contents array
+        contents: [createUserContent([prompt])],
       });
       revalidatePath("/");
       return { content: response.text };

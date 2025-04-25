@@ -1,7 +1,6 @@
 "use client";
 import type React from "react";
-
-import { useState, useRef } from "react";
+import { useState, useRef, useTransition } from "react";
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateContent } from "@/lib/actions";
@@ -60,15 +59,11 @@ const objectives = {
 };
 
 export default function ContentGenerator() {
-  // Get the generated content from cookies if available
-  // const generatedContent =
-  //   (await cookies()).get("generatedContent")?.value || "";
-  const generatedContent = ""; // Placeholder for generated content
+  const [isPending, startTransition] = useTransition();
   const [generatedContentState, setGeneratedContentState] = useState("");
   const [topic, setTopic] = useState("");
   const [contentType, setContentType] = useState("blog-post");
   const [tone, setTone] = useState("professional");
-  const [isGenerating, setIsGenerating] = useState(false);
   const [ageGroup, setAgeGroup] = useState("general");
   const [brandVoice, setBrandVoice] = useState("");
   const [objective, setObjective] = useState("awareness");
@@ -112,40 +107,39 @@ export default function ContentGenerator() {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsGenerating(true);
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    startTransition(async () => {
+      const formData = new FormData(event.currentTarget);
+      formData.append("topic", topic);
+      formData.append("contentType", contentType);
+      formData.append("tone", tone);
+      formData.append("ageGroup", ageGroup);
+      formData.append("brandVoice", brandVoice);
+      formData.append("objective", objective);
 
-    const formData = new FormData(e.currentTarget);
-    formData.append("topic", topic);
-    formData.append("contentType", contentType);
-    formData.append("tone", tone);
-    formData.append("ageGroup", ageGroup);
-    formData.append("brandVoice", brandVoice);
-    formData.append("objective", objective);
+      if (fileInputRef.current && fileInputRef.current.files?.[0]) {
+        const file = fileInputRef.current.files[0];
+        formData.append("imageFile", file, file.name);
+      }
 
-    if (image) {
-      formData.append("image", image);
-    }
+      try {
+        const result = await generateContent(formData);
+        console.log(result);
+        setGeneratedContentState(result.content || "");
 
-    try {
-      const result = await generateContent(formData);
-      console.log(result);
-      setGeneratedContentState(result.content || "");
-
-      toast({
-        title: "Content generated",
-        description: "Your content has been generated successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error generating content",
-        description: "There was an error generating your content",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
+        toast({
+          title: "Content generated",
+          description: "Your content has been generated successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error generating content",
+          description: "There was an error generating your content",
+          variant: "destructive",
+        });
+      }
+    });
   };
 
   return (
@@ -293,12 +287,10 @@ export default function ContentGenerator() {
                   </div>
                 )}
               </div>
-
-              {/* Note: Image upload requires client-side JavaScript, so we'll omit it in this server component version */}
             </CardContent>
             <CardFooter>
-              <Button type="submit" className="w-full">
-                Generate Content
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? "Generating..." : "Generate Content"}
               </Button>
             </CardFooter>
           </form>
@@ -312,7 +304,9 @@ export default function ContentGenerator() {
           <CardContent>
             <div className="min-h-[300px] max-h-[500px] overflow-y-auto border rounded-md p-4">
               {generatedContentState ? (
-                <div className="whitespace-pre-wrap">{generatedContentState}</div>
+                <div className="whitespace-pre-wrap">
+                  {generatedContentState}
+                </div>
               ) : (
                 <div className="text-muted-foreground text-center h-full flex items-center justify-center">
                   Generated content will appear here
