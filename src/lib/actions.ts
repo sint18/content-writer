@@ -1,6 +1,4 @@
 "use server";
-
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { ai } from "./gemini";
 import { createPartFromUri, createUserContent } from "@google/genai";

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { TypeOf, z } from "zod";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -135,12 +135,6 @@ export default function ContentGenerator() {
     }
   };
 
-  const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
   const copyToClipboardClient = () => {
     navigator.clipboard.writeText(generatedContentState);
     toast({
@@ -170,6 +164,7 @@ export default function ContentGenerator() {
           description: "Your content has been generated successfully",
         });
       } catch (error) {
+        console.error("Error generating content:", error);
         toast({
           title: "Error generating content",
           description: "There was an error generating your content",
@@ -461,10 +456,9 @@ export default function ContentGenerator() {
                 </div>
               ) : generatedContentState ? (
                 <div className="prose prose-md">
-                  <ReactMarkdown
-                    children={generatedContentState}
-                    remarkPlugins={[remarkGfm]}
-                  />
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {generatedContentState}
+                  </ReactMarkdown>
                 </div>
               ) : (
                 <div className="text-muted-foreground text-center h-full flex items-center justify-center">
