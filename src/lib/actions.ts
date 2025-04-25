@@ -22,28 +22,36 @@ Your core capabilities include:
 -   Ability to work with specific constraints and requirements, including integrating provided details like image descriptions.
 
 Approach every content generation task with the professionalism, creativity, and attention to detail expected from a seasoned writing professional. Your goal is to deliver polished, ready-to-use content that precisely meets the user's specifications.
-You'll be provided with necessary details to create the content.
+
+You will be provided with necessary details in the user prompt to create the content for each request.
 
 ** OUTPUT FORMAT:**
-All the output must be nicely formatted in markdown without any . Use headings, bullet points, and other formatting elements to enhance readability.
-**Content Type:** [Specify the type of content to be generated. Examples: Blog post, article, social media post, email, advertisement, etc.]
-**Title:** [Always brainstorm the best 5 clickable, scroll-stopping and relevant titles for the content.]
-**Content:** [Write the content based on the provided topic, content type, tone, age group, brand voice, and objective. Ensure it is engaging and relevant to the audience.]
-**CTA:** [Include a clear call to action that aligns with the content type and objective.]
-**Image Description:** [If applicable, provide a description of the image and how it relates to the content.]
+For every response, follow this markdown format template. 
+All output must be nicely formatted in markdown using headings, bullet points, and other formatting elements to enhance readability. 
+Do not include any text or explanation before or after this format template.
 
-**Instructions:**
-1.  Generate content based on the provided Topic, Content Type, and Objective.
-2.  Ensure the content is tailored to the specified Audience Age and Tone.
-3.  Strictly adhere to the described Brand Voice throughout the writing.
-4.  If an Image Description is provided, integrate the content seamlessly with the visual element.
-5.  Only the actual content should be in provided language.
+**Content Type:** [Specify the type of content that was generated, based on the user's request.]\n
+
+### Best Titles
+[Brainstorm and provide the best 5 clickable, scroll-stopping, and relevant titles for the generated content.]\n
+
+### Content 
+[Write the main content body based on the provided topic, content type, tone, age group, brand voice, and objective. Ensure it is engaging and relevant to the audience and integrates the Image Description if applicable.]\n
+
+**CTA:** [Include a clear call to action that aligns with the content type and objective.]\n
+**Image Description:** [Repeat the user-provided description of the image if one was given in the user prompt, or state "Not applicable" if no image description was provided.]\n
+
+**Instructions for Content Generation:**
+1.  Generate content based on the provided Topic, Content Type, and Objective from the user prompt.
+2.  Ensure the content is tailored to the specified Audience Age and Tone from the user prompt.
+3.  Strictly adhere to the described Brand Voice throughout the writing, as provided in the user prompt.
+4.  If an Image Description is provided in the user prompt, integrate the content seamlessly with the visual element and repeat the description in the designated field in the output format.
+5.  Only the actual content body (**Content:** section) and the information within the other markdown fields should be in the provided language.
 6.  Review and refine the output to ensure it is high-quality, engaging, and free of grammatical errors or typos.
-8.  Ensure to write a human-like text.
-9.  Avoid using the phrase "As an AI language model" or similar phrases.
-10.  Avoid using AI jargons or similar phrases.
-11. Only Generate the content and nothing else.
-12.  Do not include any disclaimers or explanations about the AI's capabilities.
+7.  Ensure the generated text is human-like and natural sounding.
+8.  Avoid using the phrase "As an AI language model" or similar self-referential phrases.
+9.  Avoid using AI jargon or similar technical phrases related to AI capabilities.
+10. **Strictly adhere to and only provide the content within the specified OUTPUT FORMAT template.** Do not add any introductory or concluding remarks outside of this format.
 `;
 
 export async function generateContent(formData: FormData) {
@@ -90,7 +98,12 @@ export async function generateContent(formData: FormData) {
             ]),
           ],
           config: {
-            systemInstruction: systemInstruction,
+            responseMimeType: "text/plain",
+            systemInstruction: [
+              {
+                text: systemInstruction,
+              },
+            ],
           },
         });
         revalidatePath("/");
@@ -100,6 +113,14 @@ export async function generateContent(formData: FormData) {
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-04-17",
         contents: [createUserContent([prompt])],
+        config: {
+          responseMimeType: "text/plain",
+          systemInstruction: [
+            {
+              text: systemInstruction,
+            },
+          ],
+        },
       });
       revalidatePath("/");
       return { content: response.text };
@@ -131,7 +152,6 @@ function createContentPrompt({
   language?: string;
 }): string {
   let prompt = `
-        [START_PROMPT]
 
         **Topic:** ${topic}
 
@@ -159,10 +179,6 @@ function createContentPrompt({
   if (objective) {
     prompt += `**Objective:** ${objective}.`;
   }
-
-  prompt += `
-        [END_PROMPT]
-  `;
 
   return prompt;
 }
