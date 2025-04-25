@@ -33,7 +33,7 @@ Do not include any text or explanation before or after this format template.
 **Content Type:** [Specify the type of content that was generated, based on the user's request.]\n
 
 ### Best Titles
-[Brainstorm and provide the best 5 clickable, scroll-stopping, and relevant titles for the generated content.]\n
+[Brainstorm and provide the best 5 clickable, scroll-stopping, and relevant titles for the generated content. Use numbered-list for this.]\n
 
 ### Content 
 [Write the main content body based on the provided topic, content type, tone, age group, brand voice, and objective. Ensure it is engaging and relevant to the audience and integrates the Image Description if applicable.]\n
